@@ -18,6 +18,7 @@ import Search from '../views/Search'
 import Space from '../views/Space'
 import Yigou from '../views/Yigou'
 import Liebiao from '../views/Recommend'
+import Detail from '../views/Detail'
 Vue.use(VueRouter)
 // const routes = [
 //   {
@@ -60,6 +61,7 @@ const router = new VueRouter({
     { path: '/space', component: Space },
     { path: '/yigou', component: Yigou },
     { path: '/liebiao', component: Liebiao },
+    { path: '/detail', component: Detail },
     { path: '/', redirect: '/home' }
   ]
 })

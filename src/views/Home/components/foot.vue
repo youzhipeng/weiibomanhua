@@ -6,7 +6,7 @@
       <div  class="home_recommend_title">
         精品佳作
       </div>
-      <div class="home_recommend_more">
+      <div @click="getMore('精品佳作','h5_recommend_male_fine_works')" class="home_recommend_more">
         更多&gt;
       </div>
      </div>
@@ -40,7 +40,7 @@
       <div class="home_recommend_title">
      人气作品
       </div>
-     <div class="home_recommend_more">
+     <div class="home_recommend_more" @click="getMore('人气作品','h5_recommend_male_popular_works')">
      更多&gt;
     </div>
      </div>
@@ -74,7 +74,7 @@
     <div class="home_recommend_title">
      最新上架
     </div>
-    <div class="home_recommend_more">
+    <div class="home_recommend_more" @click="getMore('最新上架','h5_recommend_male_new_arrival')">
      更多&gt;
     </div>
    </div>
@@ -108,7 +108,7 @@
     <div class="home_recommend_title">
      热门连载
     </div>
-    <div class="home_recommend_more">
+    <div class="home_recommend_more" @click="getMore('热门连载','h5_recommend_male_hot_serial')">
      更多&gt;
     </div>
    </div>
@@ -141,7 +141,7 @@
     <div class="home_recommend_title">
      小编推荐
     </div>
-    <div class="home_recommend_more">
+    <div class="home_recommend_more" @click="getMore('小编推荐','h5_recommend_male_xiaobian_recommend')">
      更多&gt;
     </div>
    </div>
@@ -175,7 +175,7 @@
     <div class="home_recommend_title">
      本周推荐
     </div>
-    <div class="home_recommend_more">
+    <div class="home_recommend_more" @click="getMore('本周推荐','h5_recommend_male_week_recommend')">
      更多&gt;
     </div>
    </div>
@@ -216,6 +216,17 @@ export default {
   },
   props: {
     info: null
+  },
+  methods: {
+    getMore (title, type) {
+      this.$router.push({
+        path: '/liebiao',
+        query: {
+          title,
+          type
+        }
+      })
+    }
   }
 }
 </script>

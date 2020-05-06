@@ -1,64 +1,265 @@
 <template>
-    <div class="pate-search">
+  <div class="pate-search">
   <div id="search_">
    <div class="search_header">
     <form method="get" action="javascript:void(0);">
      <div class="search_ferame">
       <span class="search_ferame_icon"></span>
-      <input placeholder="请输入搜索关键字" />
-      <span class="search_clear_cion" style="display: none;"></span>
+      <input placeholder="请输入搜索关键字"  v-model="search" @keyup.enter="up"/>
+      <span class="search_clear_cion" v-if="search" @click="del"></span>
      </div>
     </form>
     <div class="search_fix_btn">
-     <span>取消</span>
+     <span v-if="!search" @click="$router.back()">取消</span>
+     <span v-else @click="clickData">搜索</span>
      <!---->
     </div>
    </div>
    <div style="display: none;">
     <!---->
    </div>
-   <div class="search_footer">
+   <Node  v-show="nodes"></Node>
+   <div class="search_footer" v-show="!isShow">
     <div class="search_page" style="">
      <div class="hot_search">
       <div class="hot_serch_header">
        <div class="search_title">
         热门搜索
        </div>
-       <div class="search_icon refresh"></div>
+       <div class="search_icon refresh" @click="getClick"></div>
       </div>
       <ul class="hot_search_conent">
-       <li class="search_label"><a href="/c/71974" class=""> 我拿到的恋爱剧本不对劲！？ </a></li>
-       <li class="search_label"><a href="/c/71806" class=""> 悬疑猫——大叔深夜故事集 </a></li>
-       <li class="search_label"><a href="/c/71554" class=""> 黑粉的造星计划 </a></li>
-       <li class="search_label"><a href="/c/71557" class=""> 男友来自异次元 </a></li>
-       <li class="search_label"><a href="/c/71524" class=""> 我的灵界女友们 </a></li>
-       <li class="search_label"><a href="/c/71633" class=""> 伞少女梦谈 </a></li>
-       <li class="search_label"><a href="/c/71631" class=""> 魔王奶爸修炼中 </a></li>
-       <li class="search_label"><a href="/c/71157" class=""> 无常备忘录 </a></li>
-       <li class="search_label"><a href="/c/71358" class=""> 拜托了！学霸 </a></li>
-       <li class="search_label"><a href="/c/71323" class=""> 拎猫入住 </a></li>
-       <li class="search_label"><a href="/c/70372" class=""> 我的女友是直男 </a></li>
-       <li class="search_label"><a href="/c/71168" class=""> 天劫神卷 </a></li>
+       <li class="search_label" v-for="(item,index) in clickList" :key="index" v-show="index < 12"><a href="javascript:;" @click="clickDetail(item.object_id)" class="">{{item.title}} </a></li>
+        <!-- <li class="search_label"><a href="/c/71806" class=""> 悬疑猫——大叔深夜故事集 </a></li> -->
       </ul>
      </div>
     </div>
     <div class="hot_search hosity">
-     <div class="hot_serch_header" style="display: none;">
+     <div class="hot_serch_header" v-show="keyVal2.length">
       <div class="search_title">
        搜索历史
       </div>
-      <div class="search_icon clear"></div>
+      <div class="search_icon clear" @click="delt"></div>
      </div>
-     <ul class="hot_search_conent"></ul>
+     <ul class="hot_search_conent">
+       <li class="search_label" v-for="item in keyVal2" :key="item.name" @click="clickSend(item.name)">
+         <span class="search_label_text">{{item.name}}</span>
+         </li>
+     </ul>
     </div>
    </div>
    <!---->
+  <div class="search_result" v-show="isShow" >
+   <div class="loadMoreWraper scroll" @scroll="scl($event)" ref="box">
+    <div class="loadMore">
+     <div class="search_list" v-for="(item,index) in data" :key="index">
+      <a href="javascript:;" @click="skip(item.comic_id)" class="">
+       <div class="searchList">
+        <div class="search_list_img">
+         <div class="comic_cover" data-src="item.cover" lazy="loaded" :style="[{backgroundImage : 'url('+item.cover+')'}]"></div>
+        </div>
+        <div class="search_list_delete">
+         <h4 class="sarchList_title"><font color="red"></font>{{item.name}}</h4>
+         <div class="sina_nickname">
+          <font color="red"></font>{{item.sina_nickname}}
+         </div>
+         <div class="sina_nickname">
+          <span v-for="(list,index) in item.cates" :key="list.cate_id" v-show="index < 3">{{list.cate_name}} \</span>
+         </div>
+        </div>
+       </div></a>
+     </div>
+     <div class="load_more" style="" v-show="data.length < 1">
+      <img src="//img.manhua.weibo.com/static/b/vcomic-h5/dist/img/circle.88c279ba.png" alt="" />
+      <p style="font-size:16px">正在加载...</p>
+      <!---->
+     </div>
+    </div>
+   </div>
+  </div>
   </div>
     </div>
 </template>
 <script>
+// 引入加载图片
+import Node from '@/components/Node'
+import { getSearch, getSearch2 } from '@/api/cartoon.js'
 export default {
-  name: 'Search'
+  components: {
+    // Mymask,
+    Node
+  },
+  data () {
+    return {
+      list: [],
+      clickList: [],
+      num: 12, // 一开始的显示的条数
+      search: '', // model数据
+      data: [], // 详细页面数据
+      keyVal: [],
+      keyVal2: this.searchLog2(),
+      isShow: false,
+      nodes: false,
+      pages: 1, // 滑动的具体页数
+      history: false // 控制历史记录的显示隐藏
+    }
+  },
+  name: 'Search',
+  methods: {
+    // 当我点击搜索历史内容的时再次发送请求
+    async clickSend (name) {
+      this.search = name
+      await this.getSearch2(name, this.pages)
+      if (this.data.length === 0) {
+        this.isShow = false
+        this.nodes = true
+      } else {
+        this.isShow = true
+        this.nodes = false
+      }
+    },
+    // 清除localStorage
+    delt () {
+      window.localStorage.removeItem('search')
+      this.keyVal2 = []
+    },
+    // 定义一个方法，拿出localstorng里面的数据
+    searchLog2 () {
+      // const tmp = localStorage.getItem('search')
+      // if (!tmp) {
+      //   return []
+      // }
+      // return JSON.parse(tmp)
+      return localStorage.getItem('search') ? JSON.parse(localStorage.getItem('search')) : []
+    },
+    // 存储localStorng
+    searchLog () {
+      const tmp = this.keyVal2.findIndex(item => {
+        return item.name === this.keyVal
+      })
+      if (tmp !== -1) return
+      this.keyVal2.unshift({ name: this.keyVal })
+      localStorage.setItem('search', JSON.stringify(this.keyVal2))
+    },
+    // 点击每一个时，跳转到详细页面
+    skip (id) {
+      this.$router.push({
+        path: '/detail',
+        query: {
+          id
+        }
+      })
+    },
+    // 滚动再次发送请求
+    scl (e) {
+      if (
+        this.$refs.box.scrollHeight -
+          this.$refs.box.scrollTop -
+          this.$refs.box.clientHeight <
+        50
+      ) {
+        getSearch2(this.search, this.pages)
+          .then(res => {
+            if (res.data.data.length > 0) {
+              this.pages += 1
+              this.data.push(...res.data.data)
+            }
+          })
+          .catch(err => {
+            console.log(err)
+            alert('网络请求失败，请稍后重试')
+          })
+      }
+    },
+    del () {
+      this.search = ''
+      if (this.data) {
+        this.isShow = false
+      }
+    },
+    // 点击搜索的时候，再次发送请求
+    async clickData () {
+      this.history = true
+      this.keyVal = this.search
+      await this.getSearch2(this.search, this.pages)
+      if (this.data.length === 0) {
+        this.isShow = false
+        this.nodes = true
+      } else {
+        this.isShow = true
+        this.nodes = false
+      }
+      this.searchLog()
+    },
+    async up (e) {
+      this.isShow = true
+      this.history = true
+      if (e.keyCode === 13) {
+        this.keyVal = e.target.value
+        // this.keyVal.push(value)
+        // console.log(this.keyVal)
+        await this.getSearch2(this.search, this.pages)
+        if (this.data.length === 0) {
+          this.isShow = false
+          this.nodes = true
+        } else {
+          this.isShow = true
+          this.nodes = false
+        }
+        this.searchLog()
+      }
+    },
+    getSearch () {
+      getSearch()
+        .then(res => {
+          if (res.code === 1) {
+            this.list = res.data
+            this.clickList = this.list.slice(0, 12)
+          } else {
+            alert('网络有误')
+          }
+        })
+        .catch(err => {
+          console.log(err)
+          alert('网络有误，请稍后重试')
+        })
+    },
+    // 详细数据
+    getSearch2 (word, page) {
+      return getSearch2(word, page)
+        .then(res => {
+          if (res.code === 1) {
+            this.data = res.data.data
+            // console.log(res.data.data)
+          } else {
+            alert('网络错误')
+          }
+        })
+        .catch(err => {
+          console.log(err)
+          alert('网络出错，请稍后重试')
+        })
+    },
+    // 点击刷新按钮切换不同的热门搜索
+    getClick () {
+      this.clickList = this.list.slice(this.num, this.num + 12)
+      this.num += 12
+      if (this.num >= this.list.length) {
+        this.num = 0
+      }
+    },
+    clickDetail (id) {
+      this.$router.push({
+        path: '/detail',
+        query: {
+          id
+        }
+      })
+    }
+  },
+  created () {
+    this.getSearch()
+  }
 }
 </script>
 <style lang="scss">
@@ -182,47 +383,18 @@ a {
   color: inherit;
 }
 .refresh {
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABYCAMAAABGS8AGAAAAXVBMVEUAAAB1dXVmZmZmZmZnZ2dmZmZnZ2dmZmZnZ2dqamppaWlnZ2dmZmZmZmZpaWloaGhnZ2dnZ2dnZ2dnZ2dnZ2dpaWlmZmZvb29lZWVnZ2dnZ2dnZ2dmZmZpaWlmZmYZ+JDUAAAAHnRSTlMABvfls+nWm18gEce9cU0uF+6rlIZJHgvCqHxoUD+cjiP4AAAA6UlEQVRYw+3Wyw6CMBCFYVqgIPf7nb7/YxpKNErFzcyCkPMtZ/FHh0DrAAAAAMDttEHsS+nHQctZfTSufnObB1c3lfqLTFmyXaItScewhn0LZZ3lUZRndbnvg7yOSG0dPxSvgQj9baIiSjVPKtP1is9p4W2zWBDCShvBcR5s05AQ1oZn/TbhsYQH+0/3lRwFOawXh5verexh8/jd2WHXp1NWOHA3RTalPX92ds27zt5d9Y49vNDDYpRVb08Hcjg8+WzSwycfekNRVhGfHU2qSvLrHab/jv/rXlh+XrGufik8XGMBAAAA4G6ebC0hKTa9ORIAAAAASUVORK5CYII=);
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABYCAMAAABGS8AGAAAAXVBMVEUAAAB1dXVmZmZmZmZnZ2dmZmZnZ2dmZmZnZ2dqamppaWlnZ2dmZmZmZmZpaWloaGhnZ2dnZ2dnZ2dnZ2dnZ2dpaWlmZmZvb29lZWVnZ2dnZ2dnZ2dmZmZpaWlmZmYZ+JDUAAAAHnRSTlMABvfls+nWm18gEce9cU0uF+6rlIZJHgvCqHxoUD+cjiP4AAAA6UlEQVRYw+3Wyw6CMBCFYVqgIPf7nb7/YxpKNErFzcyCkPMtZ/FHh0DrAAAAAMDttEHsS+nHQctZfTSufnObB1c3lfqLTFmyXaItScewhn0LZZ3lUZRndbnvg7yOSG0dPxSvgQj9baIiSjVPKtP1is9p4W2zWBDCShvBcR5s05AQ1oZn/TbhsYQH+0/3lRwFOawXh5verexh8/jd2WHXp1NWOHA3RTalPX92ds27zt5d9Y49vNDDYpRVb08Hcjg8+WzSwycfekNRVhGfHU2qSvLrHab/jv/rXlh+XrGufik8XGMBAAAA4G6ebC0hKTa9ORIAAAAASUVORK5CYII=);
 }
 
-.clear,.refresh {
-    /* background-repeat:no-repeat; */
-    background-size: 100% 100%;
+.clear,
+.refresh {
+  /* background-repeat:no-repeat; */
+  background-size: 100% 100%;
 }
 
 .clear {
-    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABYCAMAAABGS8AGAAAAOVBMVEUAAABmZmZnZ2dnZ2doaGhnZ2dnZ2dmZmZoaGhnZ2dpaWlra2uAgIBmZmb///93d3fv7+/U1NSSkpJ7sC4kAAAADXRSTlMA4/OSF73VyGVZSSsGgaH6GgAAAMFJREFUWMPt1tsKwjAQRdHJrbf0mLb//7GOVESsoWBSsXjW0zxtQkhChIiIiOjbomusbVyUukaHOzdW7QY8hJplhydOqolQpve+N1Cx6oKNF+VN1SU3WuvXsdexkVqs1vw6eh2tlBkMdphBPmGwy/xW+LCtuIG6vAEliuF/D88pzYeEE5AOCUMxzPD2uJ3rgpzvrThH2Gpg2nan4m9Lq4Vl2nQXAK2U6JDVSZGAjCBlfMh0vZTqWosXtu2EiIiIiHKu8PUwR0U39xcAAAAASUVORK5CYII=)
+  background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFgAAABYCAMAAABGS8AGAAAAOVBMVEUAAABmZmZnZ2dnZ2doaGhnZ2dnZ2dmZmZoaGhnZ2dpaWlra2uAgIBmZmb///93d3fv7+/U1NSSkpJ7sC4kAAAADXRSTlMA4/OSF73VyGVZSSsGgaH6GgAAAMFJREFUWMPt1tsKwjAQRdHJrbf0mLb//7GOVESsoWBSsXjW0zxtQkhChIiIiOjbomusbVyUukaHOzdW7QY8hJplhydOqolQpve+N1Cx6oKNF+VN1SU3WuvXsdexkVqs1vw6eh2tlBkMdphBPmGwy/xW+LCtuIG6vAEliuF/D88pzYeEE5AOCUMxzPD2uJ3rgpzvrThH2Gpg2nan4m9Lq4Vl2nQXAK2U6JDVSZGAjCBlfMh0vZTqWosXtu2EiIiIiHKu8PUwR0U39xcAAAAASUVORK5CYII=);
 }
-// #search_ .search_header .search_fix_btn,#search_ .search_result {
-//     display: -webkit-box;
-//     display: -ms-flexbox;
-//     display: flex;
-//     -webkit-box-direction: normal;
-//     -webkit-box-pack: center;
-//     -ms-flex-pack: center;
-//     justify-content: center;
-//     -webkit-box-align: center;
-//     -ms-flex-align: center;
-//     align-items: center
-// }
-
-// #search_ .search_result {
-//     -webkit-box-flex: 1;
-//     -ms-flex-positive: 1;
-//     flex-grow: 1;
-//     -webkit-box-orient: vertical;
-//     -ms-flex-direction: column;
-//     flex-direction: column;
-//     padding-top: 24px;
-//     overflow: auto
-// }
-
-// #search_ .search_list {
-//     margin: 0 16px 16px;
-//     display: -webkit-box;
-//     display: -ms-flexbox;
-//     display: flex
-// }
 .hot_search {
   padding: 16px 16px 24px;
 }
@@ -278,5 +450,121 @@ a {
   -webkit-box-orient: vertical;
   height: 44px;
   line-height: 44px;
+}
+#search_ .search_header .search_fix_btn,
+#search_ .search_result {
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-direction: normal;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+#search_ .search_result {
+  width: 100%;
+  height: 100%;
+  -webkit-box-flex: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+  -webkit-box-orient: vertical;
+  -ms-flex-direction: column;
+  flex-direction: column;
+  padding-top: 24px;
+  overflow: auto;
+}
+.view-buy .list_loaded .loadMoreWraper {
+  width: 100%;
+}
+.loadMoreWraper {
+  -webkit-box-flex: 1;
+  -ms-flex-positive: 1;
+  flex-grow: 1;
+  overflow: auto;
+}
+#search_ .search_list {
+  margin: 0 16px 16px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+}
+
+#search_ .search_list .searchList {
+  width: 343px;
+  height: 96px;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: row;
+  flex-direction: row;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+  -webkit-box-align: start;
+  -ms-flex-align: start;
+  align-items: flex-start;
+}
+
+#search_ .search_list .searchList .search_list_img {
+  width: 72px;
+  height: 96px;
+}
+
+#search_ .search_list .searchList .search_list_delete {
+  -webkit-box-flex: 1;
+  -ms-flex: 1;
+  flex: 1;
+  margin-left: 8px;
+  height: 96;
+}
+
+#search_ .search_list .searchList .search_list_delete .sarchList_title {
+  height: 24px;
+  font-size: 14px;
+  color: #666;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+
+#search_ .search_list .searchList .search_list_delete .sina_nickname {
+  height: 24px;
+  font-size: 12px;
+  color: #999;
+  letter-spacing: 0;
+  line-height: 24px;
+}
+a {
+  text-decoration: none;
+}
+#search_ .load_more {
+  overflow: hidden;
+  display: -webkit-box;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-box-orient: horizontal;
+  -webkit-box-direction: normal;
+  -ms-flex-direction: row;
+  flex-direction: row;
+  -webkit-box-pack: center;
+  -ms-flex-pack: center;
+  justify-content: center;
+  -webkit-box-align: center;
+  -ms-flex-align: center;
+  align-items: center;
+}
+
+#search_ .load_more img {
+  width: 36px;
+  -webkit-animation: circle 1s linear 1s infinite;
+  animation: circle 1s linear 1s infinite;
 }
 </style>

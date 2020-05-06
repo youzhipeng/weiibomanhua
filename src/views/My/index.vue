@@ -20,7 +20,7 @@
      <img src="//img.manhua.weibo.com/static/b/vcomic-h5/dist/img/avatar.78577bb7.png" />
      <!---->
     </div>
-    <p class="mine-nickname"> ink娘U院N系97351 </p>
+    <p class="mine-nickname" @click="$router.push({path:'/account'})"> 戳我戳我登入去 </p>
     <p class="mine-vcoin"> 我的墨币: 0 </p>
    </div>
    <div class="mine-list">
@@ -234,4 +234,5 @@ export default {
     // }
   }
 }
+
 </style>

@@ -9,8 +9,8 @@
      </div>
      <div class="nav_right">
       <div class="nav_switch_gender male_btn"></div>
-      <div class="nav_serach"></div>
-      <div to="/mine" class="nav_mine"></div>
+      <div class="nav_serach" @click="$router.push({path:'/search'})"></div>
+      <div to="/mine" class="nav_mine" @click="$router.push({path:'/my'})"></div>
      </div>
     <!---->
   </div>
@@ -36,7 +36,7 @@ import { getBanner } from '@/api/cartoon.js'
 import Head from './components/head.vue'
 import Foot from './components/foot.vue'
 // 引入遮罩层
-import myMask from './components/myMask.vue'
+import myMask from '@/components/Mymask'
 export default {
   name: 'Home',
   components: {

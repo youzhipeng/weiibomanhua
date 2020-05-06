@@ -1,11 +1,12 @@
 <template>
     <div class="pate-daypub">
-  <div class="release">
+       <myMask v-if="daypubList.length === 0"></myMask>
+  <div class="release" >
    <div class="nav_layout">
     <div class="com_nav">
      <div class="nav_content">
       <div class="nav_left">
-       <div class="back_btn l_con"></div>
+       <div class="back_btn l_con" @click="path"></div>
       </div>
       <div class="nav_middle">
        <span class="nav_title">放送表</span>
@@ -15,14 +16,11 @@
      <!---->
     </div>
    </div>
-   <div class="release_date">
-    <p class="release_date_day"> 周三 </p>
-    <p class="release_date_day"> 周四 </p>
-    <p class="release_date_day"> 周五 </p>
-    <p class="release_date_day"> 周六 </p>
-    <p class="release_date_day"> 周日 </p>
-    <p class="release_date_day"> 昨天 </p>
-    <p class="release_date_day active"> 今天 </p>
+   <div class="release_date" >
+    <p class="release_date_day"
+    :class="{'active' : index === list}"
+    @click="headClick(item,index)"
+    v-for="(item,index) in daypubList" :key="item.pub_day">{{item.pub_name}} </p>
    </div>
    <!---->
    <div class="load_state">
@@ -34,8 +32,36 @@
     </div>
 </template>
 <script>
+// 引入加载图片
+import myMask from '@/components/Mymask'
+// 引入数据
+import { getDaypub } from '@/api/cartoon.js'
 export default {
-  name: 'Daypub'
+  name: 'Daypub',
+  components: {
+    myMask
+  },
+  data () {
+    return {
+      daypubList: [],
+      list: 0
+    }
+  },
+  created () {
+    getDaypub()
+      .then((res) => {
+        this.daypubList = res.tab_list
+        console.log(res.pub_day)
+      })
+  },
+  methods: {
+    headClick (item, index) {
+      this.list = index
+    },
+    path () {
+      this.$router.back()
+    }
+  }
 }
 </script>
 <style lang="scss">

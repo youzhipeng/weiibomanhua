@@ -5,7 +5,7 @@
     <div class="com_nav white_nav">
      <div class="nav_content">
       <div class="nav_left">
-       <div class="back_btn l_con"></div>
+       <div class="back_btn l_con" @click="$router.back()"></div>
       </div>
       <div class="nav_middle">
        <!---->
